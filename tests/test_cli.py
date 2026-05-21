@@ -20,6 +20,48 @@ def test_normalize_output_returns_original_when_col_missing(monkeypatch) -> None
     assert cli.normalize_output(raw) == raw
 
 
+def test_filter_metadata_sections_removes_trailing_sections_but_keeps_full_docs() -> None:
+    raw = """NAME
+     ls - list directory contents
+
+AUTHOR
+     Written by Someone.
+
+REPORTING BUGS
+     Report bugs somewhere.
+
+COPYRIGHT
+     Copyright text.
+
+SEE ALSO
+     Full documentation <https://www.gnu.org/software/coreutils/ls>
+     or available locally via: info '(coreutils) ls invocation'
+"""
+
+    filtered = cli.filter_metadata_sections(raw)
+
+    assert "AUTHOR" not in filtered
+    assert "REPORTING BUGS" not in filtered
+    assert "COPYRIGHT" not in filtered
+    assert "SEE ALSO" in filtered
+    assert "Full documentation <https://www.gnu.org/software/coreutils/ls>" in filtered
+    assert "or available locally via:" not in filtered
+
+
+def test_filter_metadata_sections_preserves_non_metadata_sections() -> None:
+    raw = """NAME
+     printf - format and print data
+
+DESCRIPTION
+     Useful text.
+
+EXIT STATUS
+     Returns 0 on success.
+"""
+
+    assert cli.filter_metadata_sections(raw) == raw
+
+
 def test_run_man_requires_arguments(capsys) -> None:
     exit_code = cli.run_man([])
     captured = capsys.readouterr()
