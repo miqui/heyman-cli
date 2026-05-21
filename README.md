@@ -1,6 +1,6 @@
 # heyman-cli
 
-`heyman-cli` is a tiny Python command-line wrapper around `man` that disables pager/editor behavior and streams the man page directly to standard output.
+`heyman-cli` is a tiny Python command-line wrapper around `man` that disables pager/editor behavior and streams the man page directly to standard output. Great for AI agents that need context!
 
 ## Why
 
