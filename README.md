@@ -2,6 +2,10 @@
 
 `heyman-cli` is a tiny Python command-line wrapper around `man` that disables pager/editor behavior and streams the man page directly to standard output. Great for AI agents that need context!
 
+## Agent SKILL
+
+This can easily be described in a SKILL.MD file without the need for a CLI wrapper. 
+
 ## Why
 
 Commands like `man printf` often invoke `less` or another pager. This project wraps `man` and forces:
