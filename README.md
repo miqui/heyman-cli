@@ -23,6 +23,14 @@ uv run heyman 3 printf
 uv run heyman -k printf
 ```
 
+To keep output small for agent context budgets, filter to specific sections and/or cap the line count. These flags may appear before or after the man arguments:
+
+```bash
+uv run heyman --section SYNOPSIS,OPTIONS printf
+uv run heyman --max-lines 200 git
+uv run heyman curl --section SYNOPSIS --max-lines 20
+```
+
 Equivalent behavior:
 
 ```bash
@@ -65,3 +73,6 @@ uv run heyman printf
 - If `man` is not installed or not on `PATH`, the CLI exits with code `127`.
 - If no arguments are provided, the CLI exits with code `2` and prints an error to `stderr`.
 - On systems where `col` is available, output is normalized to plain text to strip man-page overstrike formatting.
+- `--section` matches heading names case-insensitively; unmatched names are silently dropped (no error).
+- `--section` bypasses the default AUTHOR/REPORTING BUGS/COPYRIGHT/SEE-ALSO filtering, so `--section AUTHOR` can select sections that are hidden in the default (unfiltered `--section`) view.
+- `--max-lines` truncates *after* section filtering and appends a `... [truncated to N lines]` marker; the marker itself counts as one extra line beyond the limit.
