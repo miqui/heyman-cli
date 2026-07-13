@@ -4,7 +4,7 @@
 
 ## Agent SKILL
 
-This can easily be described in a SKILL.MD file without the need for a CLI wrapper. 
+Can easily be described in a SKILL.MD file without the need for a CLI wrapper ?? TBD
 
 ## Why
 
