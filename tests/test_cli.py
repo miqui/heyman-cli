@@ -178,6 +178,104 @@ def test_extract_trailing_options_leaves_unrelated_tokens_untouched() -> None:
     assert error is None
 
 
+CURL_LIKE_PAGE = """NAME
+     curl - transfer a URL
+
+SYNOPSIS
+     curl [options / URLs]
+
+OPTIONS
+     -d, --data <data>
+            (HTTP) Sends the specified data in a POST request to the server.
+
+     -o, --output <file>
+            Write output to <file> instead of stdout.
+
+     -T, --upload-file <file>
+            This transfers the specified local file to the remote URL.
+
+     -u, --user <user:password>
+            Specify the user name and password to use for server
+            authentication.
+
+     -v, --verbose
+            Makes curl verbose during the operation.
+"""
+
+
+def test_select_relevant_picks_chunks_matching_task_context() -> None:
+    result = cli.select_relevant(CURL_LIKE_PAGE, "upload a file with authentication", top=2)
+
+    assert "--upload-file" in result
+    assert "--user" in result
+    assert "--verbose" not in result
+    assert "--data" not in result
+
+
+def test_select_relevant_boosts_exact_flag_mentions() -> None:
+    result = cli.select_relevant(CURL_LIKE_PAGE, "what does -o mean", top=1)
+
+    assert "--output" in result
+    assert "--upload-file" not in result
+
+
+def test_select_relevant_keeps_document_order_and_section_heading() -> None:
+    result = cli.select_relevant(CURL_LIKE_PAGE, "upload file user password", top=2)
+
+    assert result.startswith("OPTIONS\n")
+    assert result.index("--upload-file") < result.index("--user")
+    assert result.count("OPTIONS") == 1
+
+
+def test_select_relevant_falls_back_to_name_and_synopsis_when_nothing_matches() -> None:
+    result = cli.select_relevant(CURL_LIKE_PAGE, "zzzz qqqq", top=3)
+
+    assert result.startswith("[heyman] no content matched query")
+    assert "curl - transfer a URL" in result
+    assert "curl [options / URLs]" in result
+    assert "OPTIONS" not in result
+
+
+def test_split_chunks_merges_flag_signature_with_description() -> None:
+    body = [
+        "     -T, --upload-file <file>",
+        "",
+        "            Transfers the local file to the remote URL.",
+        "",
+        "     -v, --verbose",
+        "            Verbose output.",
+    ]
+
+    chunks = cli.split_chunks(body)
+
+    assert len(chunks) == 2
+    assert "--upload-file" in chunks[0][0]
+    assert any("Transfers the local file" in line for line in chunks[0])
+
+
+def test_query_terms_drops_stopwords_but_keeps_flags() -> None:
+    assert cli.query_terms("I want to use -o for the output") == ["-o", "output"]
+
+
+def test_post_process_output_applies_query_then_truncation() -> None:
+    result = cli.post_process_output(
+        CURL_LIKE_PAGE.encode(), query="upload a file", top=1, max_lines=2
+    ).decode()
+
+    assert "--upload-file" in result
+    assert result.rstrip().endswith("[truncated to 2 lines]")
+
+
+def test_extract_trailing_options_recovers_query_and_top() -> None:
+    remaining, extracted, error = cli.extract_trailing_options(
+        ["curl", "--query", "upload a file", "--top", "3"]
+    )
+
+    assert remaining == ["curl"]
+    assert extracted == {"query": "upload a file", "top": "3"}
+    assert error is None
+
+
 def test_run_man_requires_arguments(capsys) -> None:
     exit_code = cli.run_man([])
     captured = capsys.readouterr()
